@@ -7,6 +7,7 @@ from scrapy import signals
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
+from scrapy.exceptions import IgnoreRequest
 
 
 class ScrapyProjectSpiderMiddleware:
@@ -101,3 +102,14 @@ class ScrapyProjectDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
+
+class Handle403Middleware(object):
+    def process_response(self, request, response, spider):
+        if response.status == 403:
+            breakpoint()
+            # Здесь можно выполнить нужные действия для обработки ошибки 403
+            # Например, можно повторить запрос или записать информацию об ошибке в лог
+            # Если вы хотите проигнорировать ошибку 403 и не обрабатывать её дальше, то можно выбросить исключение IgnoreRequest
+            raise IgnoreRequest("403 Forbidden")
+        return response
