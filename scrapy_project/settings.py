@@ -17,7 +17,7 @@ NEWSPIDER_MODULE = "scrapy_project.spiders"
 #USER_AGENT = "scrapy_project (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -95,3 +95,5 @@ TEMPLATES_DIR="template"
 FEED_EXPORTERS = {
     'xlsx': 'scrapy_project.exporters.CustomHeadersXlsxItemExporter',
 }
+
+CLOSESPIDER_PAGECOUNT = 1000
