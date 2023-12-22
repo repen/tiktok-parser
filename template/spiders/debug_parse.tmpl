@@ -1,0 +1,28 @@
+import scrapy
+
+
+class $classname(scrapy.Spider):
+    name = "$name"
+    allowed_domains = ["$domain"]
+    start_urls = ["$url"]
+
+    custom_settings = {
+        'DOWNLOADER_MIDDLEWARES': {
+            'scrapy_project.middlewares.Handle403Middleware': 543,
+        },
+        'ROBOTSTXT_OBEY': False,
+        'DEFAULT_REQUEST_HEADERS': {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en',
+          'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1309.0 Safari/537.17'
+        }
+    }
+
+    def start_requests(self):
+        return [
+            scrapy.Request("$url", callback=self.first_handler)
+        ]
+
+    def first_handler(self, response):
+        from scrapy.shell import inspect_response
+        inspect_response(response, self)
