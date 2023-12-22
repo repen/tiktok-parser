@@ -107,7 +107,6 @@ class ScrapyProjectDownloaderMiddleware:
 class Handle403Middleware(object):
     def process_response(self, request, response, spider):
         if response.status == 403:
-            breakpoint()
             # Здесь можно выполнить нужные действия для обработки ошибки 403
             # Например, можно повторить запрос или записать информацию об ошибке в лог
             # Если вы хотите проигнорировать ошибку 403 и не обрабатывать её дальше, то можно выбросить исключение IgnoreRequest
