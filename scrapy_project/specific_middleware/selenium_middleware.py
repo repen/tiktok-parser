@@ -11,40 +11,59 @@ from scrapy.exceptions import IgnoreRequest
 from scrapy.http import HtmlResponse
 
 from selenium.common.exceptions import TimeoutException
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from web_render.base.abstract import SeleniumRender, make_selenium_webdriver
 # useful for handling different item types with a single interface
 from selenium import webdriver
+from data_diger.selenium import auth_http_proxy
+
+
+def make_chrome_driver(config: dict) -> webdriver.Chrome:
+    options = Options()
+
+    if config.get('HEADLESS'):
+        options.add_argument('--headless=new')
+
+    if config.get("proxy"):
+        encoded_extension = auth_http_proxy(
+            config["proxy"]["host"],
+            config["proxy"]["port"],
+            config["proxy"]["username"],
+            config["proxy"]["password"],
+        )
+        options.add_encoded_extension(encoded_extension)
+
+    chrome_prefs = dict()
+    if config.get("DISABLE_IMAGE"):
+        chrome_prefs["profile.default_content_settings"] = {"images": 2}
+        chrome_prefs["profile.managed_default_content_settings"] = {"images": 2}
+
+    if config.get("LOGGING_PREFS"):
+        options.set_capability("goog:loggingPrefs", config.get("LOGGING_PREFS"))
+
+    options.add_experimental_option("prefs", chrome_prefs)
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
+    options.add_argument('--disable-notifications')
+    # options.add_argument("start-maximized")
+
+    if config.get("STRATEGY"):
+        # Установка pageLoadStrategy на 'eager' или 'none'
+        options.page_load_strategy = config.get("STRATEGY")  # или 'none' в зависимости от ваших требований
+
+    if config.get("LANGUAGE"):
+        # example en,en_US
+        chrome_prefs['intl.accept_languages'] = config.get("LANGUAGE")
+
+    driver = webdriver.Remote(
+        command_executor=f"{config.get('COMMAND_EXECUTOR')}/wd/hub",
+        options=options
+    )
+    return driver
 
 
 class SeleniumDownloaderMiddleware:
-
-    @staticmethod
-    def make_selenium_webdriver(config: dict):
-        co = Options()
-        if config.get("PROXY_SERVER"):
-            co.add_argument(f"--proxy-server={config['PROXY_SERVER']}")
-        co.add_argument('--disable-blink-features=AutomationControlled')
-        # co.add_argument('--no-sandbox')
-        # co.add_argument('--disable-dev-shm-usage')
-        co.add_experimental_option("excludeSwitches", ["ignore-certificate-errors"])
-        co.add_experimental_option("excludeSwitches", ["enable-automation"])
-        co.add_experimental_option('useAutomationExtension', False)
-        co.add_argument("start-maximized")
-
-        chrome_prefs = {}
-        chrome_prefs["profile.default_content_settings"] = {"images": 2}
-        chrome_prefs["profile.managed_default_content_settings"] = {"images": 2}
-        co.add_experimental_option("prefs", chrome_prefs)
-
-        download_driver = Service(ChromeDriverManager(
-            driver_version=config.get('CHROME_DRIVER_VERSION')
-        ).install())
-
-        driver = webdriver.Chrome(service=download_driver, options=co)
-        return driver
 
     @classmethod
     def from_crawler(cls, crawler):
@@ -58,23 +77,25 @@ class SeleniumDownloaderMiddleware:
 
     def __init__(self, settings):
         self.spider_opened = None
-        self.render = SeleniumRender(make_selenium_webdriver(settings), timeout_web_wait=20)
+        self.driver = make_chrome_driver(settings)
 
     def process_request(self, request, spider):
-        if not request.meta.get("web_render"):
+        if not request.meta.get("driver"):
             return None
 
-        self.render.browser.get(request.url)
+        self.driver.get(request.url)
         if request.meta.get("web_wait"):
-            try:
-                self.render._web_wait(request.meta.get("web_wait"))
-            except TimeoutException as err:
-                raise IgnoreRequest(f"{err}\n{request.url} not items.")
+            breakpoint()
+            raise NotImplemented("web wait")
+            # try:
+            #     self.render._web_wait(request.meta.get("web_wait"))
+            # except TimeoutException as err:
+            #     raise IgnoreRequest(f"{err}\n{request.url} not items.")
 
         # Создайте объект HtmlResponse, чтобы передать его обратно в паук
         response = HtmlResponse(
             url=request.url,
-            body=self.render.get_content(),
+            body=self.driver.page_source,
             encoding='utf-8',
             request=request
         )
@@ -85,4 +106,4 @@ class SeleniumDownloaderMiddleware:
         spider.logger.info("Spider opened: %s" % spider.name)
 
     def spider_closed(self):
-        self.render.quit()
+        self.driver.quit()

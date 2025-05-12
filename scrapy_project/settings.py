@@ -95,7 +95,4 @@ TEMPLATES_DIR="template"
 FEED_EXPORTERS = {
     'xlsx': 'scrapy_project.exporters.CustomHeadersXlsxItemExporter',
 }
-
 CLOSESPIDER_PAGECOUNT = 1000
-USER_DATA_DIR = "/tmp"
-PROXY_SERVER = None
