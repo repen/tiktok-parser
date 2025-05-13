@@ -15,6 +15,7 @@ from selenium.webdriver.chrome.options import Options
 # useful for handling different item types with a single interface
 from selenium import webdriver
 from data_diger.selenium import auth_http_proxy
+from twisted.internet.threads import deferToThread
 
 
 def make_chrome_driver(config: dict) -> webdriver.Chrome:
@@ -27,7 +28,7 @@ def make_chrome_driver(config: dict) -> webdriver.Chrome:
         encoded_extension = auth_http_proxy(
             config["proxy"]["host"],
             config["proxy"]["port"],
-            config["proxy"]["username"],
+            config["proxy"]["login"],
             config["proxy"]["password"],
         )
         options.add_encoded_extension(encoded_extension)
@@ -77,33 +78,33 @@ class SeleniumDownloaderMiddleware:
 
     def __init__(self, settings):
         self.spider_opened = None
-        self.driver = make_chrome_driver(settings)
+        self.settings = settings
+
+    def _get_selenium_response(self, request):
+        driver = make_chrome_driver(self.settings)  # новый каждый раз
+        try:
+            driver.get(request.url)
+            callback = request.meta.get("driver_callback")
+            if callable(callback):
+                callback(driver)
+            return HtmlResponse(
+                url=request.url,
+                body=driver.page_source,
+                encoding='utf-8',
+                request=request
+            )
+        finally:
+            driver.quit()
 
     def process_request(self, request, spider):
-        if not request.meta.get("driver"):
-            return None
-
-        self.driver.get(request.url)
-        if request.meta.get("web_wait"):
-            breakpoint()
-            raise NotImplemented("web wait")
-            # try:
-            #     self.render._web_wait(request.meta.get("web_wait"))
-            # except TimeoutException as err:
-            #     raise IgnoreRequest(f"{err}\n{request.url} not items.")
-
-        # Создайте объект HtmlResponse, чтобы передать его обратно в паук
-        response = HtmlResponse(
-            url=request.url,
-            body=self.driver.page_source,
-            encoding='utf-8',
-            request=request
-        )
-
-        return response
+        # if not request.meta.get("driver_callback"):
+        #     raise RuntimeError("Not processing request")
+        # Вот тут запускаем selenium-часть в отдельном потоке:
+        d = deferToThread(self._get_selenium_response, request)
+        return d
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
 
     def spider_closed(self):
-        self.driver.quit()
+        pass
