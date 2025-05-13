@@ -93,7 +93,7 @@ TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 TEMPLATES_DIR="template"
 FEED_EXPORTERS = {
-    'xlsx': 'scrapy_project.exporters.CustomHeadersXlsxItemExporter',
+    'xlsx': 'scrapy_project.exporters.XlsxItemExporter',
 }
 CLOSESPIDER_PAGECOUNT = 1000
 REACTOR_THREADPOOL_MAXSIZE = 10

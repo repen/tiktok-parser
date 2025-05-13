@@ -3,7 +3,7 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-from scrapy import signals
+from scrapy import signals, Request
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -77,16 +77,15 @@ class SeleniumDownloaderMiddleware:
         return target
 
     def __init__(self, settings):
-        self.spider_opened = None
         self.settings = settings
 
-    def _get_selenium_response(self, request):
+    def _get_selenium_response(self, request: Request):
         driver = make_chrome_driver(self.settings)  # новый каждый раз
         try:
             driver.get(request.url)
             callback = request.meta.get("driver_callback")
             if callable(callback):
-                callback(driver)
+                callback(driver, request)
             return HtmlResponse(
                 url=request.url,
                 body=driver.page_source,
@@ -96,12 +95,12 @@ class SeleniumDownloaderMiddleware:
         finally:
             driver.quit()
 
-    def process_request(self, request, spider):
-        # if not request.meta.get("driver_callback"):
-        #     raise RuntimeError("Not processing request")
-        # Вот тут запускаем selenium-часть в отдельном потоке:
-        d = deferToThread(self._get_selenium_response, request)
-        return d
+    def process_request(self, request: Request, spider):
+        if self.settings.get("NAME") and self.settings["NAME"] == "development":
+            return self._get_selenium_response(request)
+        else:
+            d = deferToThread(self._get_selenium_response, request)
+            return d
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
