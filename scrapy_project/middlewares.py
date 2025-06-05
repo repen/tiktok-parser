@@ -8,6 +8,7 @@ from scrapy import signals
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
 from scrapy.exceptions import IgnoreRequest
+from itertools import cycle
 
 
 class ScrapyProjectSpiderMiddleware:
@@ -112,3 +113,23 @@ class Handle403Middleware(object):
             # Если вы хотите проигнорировать ошибку 403 и не обрабатывать её дальше, то можно выбросить исключение IgnoreRequest
             raise IgnoreRequest("403 Forbidden")
         return response
+
+
+class ProxyMiddleware:
+    def __init__(self, proxy_list):
+        self.proxy_iter = cycle(proxy_list)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        proxy_list = crawler.settings.getlist("PROXY_LIST")
+        if not proxy_list:
+            raise RuntimeError("PROXY_LIST is empty")
+        return cls(
+            proxy_list=crawler.settings.get('PROXY_LIST', [])
+        )
+
+    def process_request(self, request, spider):
+        # Выбираем случайный прокси из списка
+        proxy = next(self.proxy_iter)
+        # Устанавливаем прокси для данного запроса
+        request.meta['proxy'] = proxy

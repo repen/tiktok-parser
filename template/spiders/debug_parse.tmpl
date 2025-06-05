@@ -8,6 +8,7 @@ class $classname(scrapy.Spider):
 
     custom_settings = {
         'DOWNLOADER_MIDDLEWARES': {
+            'scrapy_project.middlewares.ProxyMiddleware': 542,
             'scrapy_project.middlewares.Handle403Middleware': 543,
         },
         'FEED_EXPORT_FIELDS': [],
