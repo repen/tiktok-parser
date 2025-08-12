@@ -1,10 +1,5 @@
 from openpyxl import Workbook
 from openpyxl.cell.cell import KNOWN_TYPES
-from scrapy.exporters import BaseItemExporter, CsvItemExporter
-
-
-from openpyxl import Workbook
-from openpyxl.cell.cell import KNOWN_TYPES
 from scrapy.exporters import BaseItemExporter
 from scrapy.utils.project import get_project_settings
 

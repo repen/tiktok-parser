@@ -1,6 +1,14 @@
 import scrapy
 
 
+import scrapy_project.spiders.$name.settings as settings
+from scrapy_project.common.utils import load_settings
+
+
+# Импортируем настройки как словарь
+settings_dict = load_settings(settings)
+
+
 class $classname(scrapy.Spider):
     name = "$name"
     allowed_domains = ["$domain"]
@@ -19,6 +27,8 @@ class $classname(scrapy.Spider):
           'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1309.0 Safari/537.17'
         }
     }
+
+    custom_settings.update(settings_dict)
 
     def start_requests(self):
         return [
