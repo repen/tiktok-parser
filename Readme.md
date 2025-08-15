@@ -1,8 +1,12 @@
 ### Command
 
+Зависимости установка
+
 ```shell
-pip install scrapy
+pip install -r requirements.txt
 ```
+
+Паук создать
 
 ```shell
 cd work
@@ -13,7 +17,7 @@ scrapy crawl <spider name>
 ```
  
 
-Скрипт генерации паука
+Генерации паука скрипт
 
 ```shell
 python script.py ya ya.ru
